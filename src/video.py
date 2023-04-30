@@ -33,7 +33,7 @@ class PLVideo(Channel):
                 self.video_title: str = video['snippet']['title']
                 #self.view_count: int = video['statistics']['viewCount']
                 #self.like_count: int = video['statistics']['likeCount']
-                
+
     def __str__(self):
         return f"{self.video_title}"
 
