@@ -36,10 +36,13 @@ class Channel:
         self.url=snippet_dct.get('customUrl')  # https://www.youtube.com/channel/UCMCgOm8GZkHp8zJ6l7_hIuA
 
 
-    def print_info(self) -> None:
+    def print_info(self, json_object='') -> None:
         """Выводит в консоль информацию о канале."""
         """Выводит словарь в json-подобном удобном формате с отступами"""
-        print(json.dumps(self.channel, indent=2, ensure_ascii=False))
+        if json_object != "":
+            print(json.dumps(json_object, indent=2, ensure_ascii=False))
+        else:
+            print(json.dumps(self.channel, indent=2, ensure_ascii=False))
 
     def to_json(self,json_name):
         prop_dct={}
