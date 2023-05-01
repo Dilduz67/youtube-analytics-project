@@ -14,10 +14,13 @@ class PlayList(Channel):
         #self.print_info(self.playlist)
         #self.playlist_dct=json.loads(self.playlist)
 
+        self.playlist_id=playlist_id
+
         self.title=self.playlist["items"][0]["snippet"]['title']
         self.url = "https://www.youtube.com/playlist?list=" + playlist_id
 
-        playlist_videos = self.youtube.playlistItems().list(playlistId=playlist_id,
+    def get_videos(self):
+        playlist_videos = self.youtube.playlistItems().list(playlistId=self.playlist_id,
                                                        part='contentDetails, snippet',
                                                        maxResults=50,
                                                        ).execute()
@@ -26,33 +29,38 @@ class PlayList(Channel):
         video_ids: list[str] = [video['contentDetails']['videoId'] for video in playlist_videos['items']]
         #print(video_ids)
 
+        self.video_response = self.youtube.videos().list(part='contentDetails,statistics',
+                                               id=','.join(video_ids)
+                                               ).execute()
+
+    @property
+    def total_duration(self):
         '''
         вывести длительности видеороликов из плейлиста
         docs: https://developers.google.com/youtube/v3/docs/videos/list
         '''
-        video_response = self.youtube.videos().list(part='contentDetails,statistics',
-                                               id=','.join(video_ids)
-                                               ).execute()
+        self.get_videos()
 
-        self.total_seconds=0.0
-        likes_count = 0
+        total_seconds=0.0
 
-        for video in video_response['items']:
+        for video in self.video_response['items']:
             # YouTube video duration is in ISO 8601 format
             iso_8601_duration = video['contentDetails']['duration']
             video_duration = isodate.parse_duration(iso_8601_duration)
             duration_list=str(video_duration).split(':')
-            self.total_seconds += datetime.timedelta(hours=int(duration_list[0]),minutes=int(duration_list[1]),seconds=int(duration_list[2])).total_seconds()
+            total_seconds += datetime.timedelta(hours=int(duration_list[0]),minutes=int(duration_list[1]),seconds=int(duration_list[2])).total_seconds()
 
-            if likes_count < int(video['statistics']['likeCount']):
-                likes_count = int(video['statistics']['likeCount'])
-                self.best_video_id=video['id']
+        duration = datetime.timedelta(seconds=total_seconds)
 
-        self.duration = datetime.timedelta(seconds=self.total_seconds)
-
-    @property
-    def total_duration(self):
-        return self.duration
+        return duration
 
     def show_best_video(self):
-        return f"https://youtu.be/{self.best_video_id}"
+        self.get_videos()
+        likes_count = 0
+
+        for video in self.video_response['items']:
+            if likes_count < int(video['statistics']['likeCount']):
+                likes_count = int(video['statistics']['likeCount'])
+                best_video_id=video['id']
+
+        return f"https://youtu.be/{best_video_id}"
